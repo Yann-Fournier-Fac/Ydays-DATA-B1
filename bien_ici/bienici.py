@@ -5,6 +5,7 @@ import streamlit as st
 import plotly.express as px
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import altair as alt
 import json
 from math import pi
@@ -61,7 +62,8 @@ for i in range(len(HautDeSeineJson["features"])):
     HautDeSeineJson["features"][i]["id"]= HautDeSeineJson["features"][i]["properties"]["code"]
 
 #print(HautDeSeineJson)
-bar = pd.DataFrame({"code": codePostal, "Moyenne": moyenne})
+#autre = [0 for i in range(len(codePostal))]
+bar = pd.DataFrame({ "Moyenne": moyenne, "cpt":cpt,"code": codePostal})
 
 
 y_pos = np.arange(len(bar["code"]))
@@ -107,7 +109,7 @@ plt.xticks(angles[:-1], categories, color='grey', size=5)
 # Draw ylabels
 ax.set_rlabel_position(0)
 plt.yticks([50,100,150,200,250], ["50","100", "150", "200", "250"], color="grey", size=5)
-plt.ylim(0,300)
+plt.ylim(0,250)
 
 # Plot data
 ax.plot(angles, values, linewidth=1, linestyle='solid')
@@ -176,10 +178,41 @@ for row in range(0, len(radar.index)-1):
 
 plt.show()
 st.pyplot()
+
 st.text("Prix (en centaine de milliers d'euros)")
 st.text("Prix m2 (en centaine d'euros)")
 st.text("surface (en m2)")
 st.text("Nombre de pieces")
+
+
+code = [int(Maison["Code Postal"][i]) for i in range(len(Maison["Code Postal"]))]
+prix = [int(Maison["Prix (€)"][i]) for i in range(len(Maison["Prix (€)"]))]
+df = pd.DataFrame({"Code Postal" : code, "Prix (€)": prix})
+# boxplot
+ax = sns.boxplot(x="Code Postal", y="Prix (€)", data=df)
+# add stripplot
+ax = sns.stripplot(x="Code Postal", y="Prix (€)", data=df, color="orange", jitter=0.2, size=4.5)
+plt.xticks(rotation=90)
+# add title
+plt.title("Prix en Euros par ville")
+# show the graph
+plt.show()
+st.pyplot()
+
+sns.pairplot(bar)
+plt.show()
+st.pyplot()
+
+#sns.regplot(x=Maison["Nbr de Pieces"], y=Maison["Surface (m2)"])
+#st.pyplot()
+# plt.plot( 'Surface (m2)', 'Nbr de Pieces', "", data=Maison, linestyle='', marker='o')
+# plt.xlabel('Value of X')
+# plt.ylabel('Value of Y')
+# plt.xticks(rotation=90)
+# plt.title('Overplotting looks like that:', loc='left')
+# plt.show()
+# st.pyplot()
+
 
 # Build the choropleth
 # fig = px.choropleth(df, 
