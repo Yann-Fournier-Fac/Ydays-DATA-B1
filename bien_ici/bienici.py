@@ -11,8 +11,7 @@ import json
 from math import pi
 
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
-
+# Recup BDD $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 client = pymongo.MongoClient('mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.8.0')
 sinfun = client.BIEN_ICI.Appartement
 sinfun.find_one()
@@ -22,8 +21,16 @@ entries = list(cursor)
 entries[:5]
 
 Maison = pd.DataFrame(entries)
+
 #print(type(Maison["Prix du m2"][5]))
 
+
+
+
+# streamlit $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+st.set_option('deprecation.showPyplotGlobalUse', False) # enlever les warning sur st
+
+# BARPLOT **********************************************************************************************************************************************************************************
 codePostal = []
 contient = False
 #print(type(codePostal))
@@ -34,15 +41,6 @@ for i in range(len(Maison["Code Postal"])):
 codePostal = list(set(codePostal))
 #print(codePostal)
 
-
-# streamlit
-title = ["Code Postal","Prix (€)","Surface (m2)","Prix du m2","Nbr de Pieces"]
-
-# Carte des Haut-de-Seine : (prix du mettre carrée ne moy par ville)
-with open('/Users/yann/Documents/cours_Ynov/Ydays/Data/bien_ici/HDS.json', 'r') as f:
-    HautDeSeineJson = json.load(f)
-
-# BARPLOT *************************************************************************************
 moyenne = [0 for i in range(len(codePostal))]
 cpt = [0 for i in range(len(codePostal))]
 
@@ -56,12 +54,6 @@ for i in range(len(moyenne)):
     moyenne[i] /= cpt[i]
 
 #print(moyenne)
-#print(type(HautDeSeineJson["features"]))
-
-for i in range(len(HautDeSeineJson["features"])):
-    HautDeSeineJson["features"][i]["id"]= HautDeSeineJson["features"][i]["properties"]["code"]
-
-#print(HautDeSeineJson)
 #autre = [0 for i in range(len(codePostal))]
 bar = pd.DataFrame({ "Moyenne": moyenne, "cpt":cpt,"code": codePostal})
 
@@ -69,14 +61,93 @@ bar = pd.DataFrame({ "Moyenne": moyenne, "cpt":cpt,"code": codePostal})
 y_pos = np.arange(len(bar["code"]))
 plt.bar(y_pos, bar["Moyenne"])
 plt.xticks(y_pos, bar["code"], rotation=90)
+plt.title("Moyenne Prix au m2 par ville")
 #plt.subplots_adjust(bottom=0.4, top=0.99)
 #plt.show()
 #fig = plt.subplot()
 #st.pyplot(fig)
 st.pyplot()
 
-# BASIC RADAR CHART **************************************************************************
+# BOUGIES *******************************************************************************************************************************************
 
+code = [int(Maison["Code Postal"][i]) for i in range(len(Maison["Code Postal"]))]
+prix = [int(Maison["Prix (€)"][i]) for i in range(len(Maison["Prix (€)"]))]
+df = pd.DataFrame({"Code Postal" : code, "Prix (€)": prix})
+# boxplot
+ax = sns.boxplot(x="Code Postal", y="Prix (€)", data=df)
+# add stripplot
+ax = sns.stripplot(x="Code Postal", y="Prix (€)", data=df, color="orange", jitter=0.2, size=4.5)
+plt.xticks(rotation=90)
+# add title
+plt.title("Moyenne des prix en euros par ville")
+# show the graph
+plt.show()
+st.pyplot()
+
+# BASIC RADAR CHART *******************************************************************************************************************************
+def nbrAppartVille(codePostal):
+    tab = [0 for i in range(6)]
+    for i in range(len(Maison["Nbr de Pieces"])):
+        if Maison["Code Postal"][i] == codePostal:
+            tab[int(Maison["Nbr de Pieces"][i])] += 1
+
+    for i in range(len(tab)):
+        print(tab[i])
+
+    rad = pd.DataFrame({
+        "valeurs": ["1", "2", "3", "4" , "5", "6"],
+        "1": tab[0],
+        "2": tab[1],
+        "3": tab[2],
+        "4": tab[3],
+        "5": tab[4],
+        "6": tab[5]
+    })
+
+    # number of variable
+    categories=list(rad)[1:]
+    N = len(categories)
+
+    # We are going to plot the first line of the data frame.
+    # But we need to repeat the first value to close the circular graph:
+    values=rad.loc[0].drop('valeurs').values.flatten().tolist()
+    values += values[:1]
+    values
+
+    # What will be the angle of each axis in the plot? (we divide the plot / number of variable)
+    angles = [n / float(N) * 2 * pi for n in range(N)]
+    angles += angles[:1]
+
+    # Initialise the spider plot
+    ax = plt.subplot(111, polar=True)
+
+    # Draw one axe per variable + add labels
+    plt.xticks(angles[:-1], categories, color='grey', size=5)
+
+    # Draw ylabels
+    ax.set_rlabel_position(0)
+    plt.yticks([10,20], ["10","20"], color="grey", size=5)
+    plt.ylim(0,30)
+
+    # Plot data
+    ax.plot(angles, values, linewidth=1, linestyle='solid')
+
+    # Fill area
+    ax.fill(angles, values, 'b', alpha=0.1)
+    plt.title("Nbr Pieces Apparts "+ codePostal, size=11, y=1.1)
+
+
+    # Show the graph
+    plt.show()
+    st.pyplot()
+
+nbrAppartVille('92250')
+nbrAppartVille('92000')
+#nbrAppartVille('92800')
+
+
+# BASIC RADAR CHART 2 *****************************************************************************************************************************************
+title = ["Code Postal","Prix (€)","Surface (m2)","Prix du m2","Nbr de Pieces"]
 radar = pd.DataFrame({
     "titre" : title,
     "Prix": [248,228,269,199,202.464],
@@ -85,6 +156,7 @@ radar = pd.DataFrame({
     "surface": [79,34,43,33,29]
     
 })
+
 
 # number of variable
 categories=list(radar)[1:]
@@ -126,7 +198,7 @@ st.text("Prix m2 (en centaine d'euros)")
 st.text("surface (en m2)")
 st.text("Nombre de pieces")
 
-# BASIC RADAR CHART 2 **************************************************************************
+# BASIC RADAR CHART 3 ********************************************************************************************************************************
 # ------- PART 1: Define a function that do a plot for one line of the dataset!
  
 def make_spider( row, title, color):
@@ -185,24 +257,8 @@ st.text("surface (en m2)")
 st.text("Nombre de pieces")
 
 
-code = [int(Maison["Code Postal"][i]) for i in range(len(Maison["Code Postal"]))]
-prix = [int(Maison["Prix (€)"][i]) for i in range(len(Maison["Prix (€)"]))]
-df = pd.DataFrame({"Code Postal" : code, "Prix (€)": prix})
-# boxplot
-ax = sns.boxplot(x="Code Postal", y="Prix (€)", data=df)
-# add stripplot
-ax = sns.stripplot(x="Code Postal", y="Prix (€)", data=df, color="orange", jitter=0.2, size=4.5)
-plt.xticks(rotation=90)
-# add title
-plt.title("Prix en Euros par ville")
-# show the graph
-plt.show()
-st.pyplot()
 
-sns.pairplot(bar)
-plt.show()
-st.pyplot()
-
+# Test Plot (JSP lequel) *******************************************************************************************************************************************************
 #sns.regplot(x=Maison["Nbr de Pieces"], y=Maison["Surface (m2)"])
 #st.pyplot()
 # plt.plot( 'Surface (m2)', 'Nbr de Pieces', "", data=Maison, linestyle='', marker='o')
@@ -213,8 +269,19 @@ st.pyplot()
 # plt.show()
 # st.pyplot()
 
+# Test De carte des Hauts-de-Seine ***************************************************************************************************************************************************************
+# Carte des Haut-de-Seine : (prix du mettre carrée ne moy par ville)
 
-# Build the choropleth
+# with open('/Users/yann/Documents/cours_Ynov/Ydays/Data/bien_ici/HDS.json', 'r') as f:
+#     HautDeSeineJson = json.load(f)
+# #print(type(HautDeSeineJson["features"]))
+
+# for i in range(len(HautDeSeineJson["features"])):
+#     HautDeSeineJson["features"][i]["id"]= HautDeSeineJson["features"][i]["properties"]["code"]
+
+# print(HautDeSeineJson)
+
+# #Build the choropleth
 # fig = px.choropleth(df, 
 #     geojson=HautDeSeineJson, 
 #     locations='code',
@@ -235,6 +302,6 @@ st.pyplot()
 #     dtick=5
 # ))
 
-#fig.show()
+# fig.show()
 
 
